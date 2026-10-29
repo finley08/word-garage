@@ -61,6 +61,11 @@
   .parts{margin-top:18px;display:flex;align-items:baseline;gap:7px}
   .parts b{font-size:30px;font-weight:800;letter-spacing:.02em}
   .parts span{font-size:12px;color:var(--dim)}
+  .guide{display:flex;flex-direction:column;gap:8px;margin-top:24px;width:216px}
+  .gb{font-size:12.5px;color:var(--dim);text-align:center;letter-spacing:.04em;
+    border:1px dashed var(--line);border-radius:10px;padding:9px}
+  .linkbtn{background:none;border:0;color:var(--yellow);font-size:13px;margin-top:18px;
+    text-decoration:underline;text-underline-offset:4px;padding:8px}
 
   .cta{margin:0 20px 14px;border:0;border-radius:16px;padding:19px;font-size:17px;font-weight:800;
     letter-spacing:.06em;color:#fff;background:linear-gradient(180deg,var(--red),var(--red-d));
@@ -703,9 +708,14 @@ function renderHome(){
 
   const wd = now.getDay();
   const weekend = (wd === 5 || wd === 6 || wd === 0);
+  const empty = state.words.length === 0;
   let cta, hint, phase = "";
 
-  if (weekend && sortQ.length){
+  if (empty){
+    phase = "import";
+    cta = "贴词单";
+    hint = "还没有词，先把这周的默写单贴进来";
+  } else if (weekend && sortQ.length){
     phase = "sort";
     cta = "开始分拣";
     hint = "新词单到了，先看看哪些已经会了（" + sortQ.length + " 个词）";
@@ -726,6 +736,15 @@ function renderHome(){
     hint = "车在车库停着";
   }
 
+  const guide = empty
+    ? '<div class="guide">' +
+        '<div class="gb">① 贴词单</div>' +
+        '<div class="gb">② 周末分拣</div>' +
+        '<div class="gb">③ 晚上调车 · 早上出车</div>' +
+      "</div>" +
+      '<button class="linkbtn" id="btn-demo">先灌 20 个演示词，看看手感</button>'
+    : "";
+
   app.innerHTML =
     '<div class="screen">' +
       '<div class="bar">' +
@@ -743,17 +762,21 @@ function renderHome(){
           return '<i class="' + (i < lvl ? "on" : "") + '"></i>';
         }).join("") + "</div>" +
         '<div class="parts"><b>' + state.car.parts + "</b><span>零件</span></div>" +
+        guide +
       "</div>" +
       '<button class="cta" id="btn-go" ' + (phase ? "" : "disabled") + ">" + cta + "</button>" +
       '<div class="hint">' + hint + (STORE_OK ? "" : " · 当前不存档，用 http 打开") + "</div>" +
     "</div>";
 
   $("#btn-go").onclick = function(){
-    if (phase === "sort") startSession("sort", sortQ, "分拣");
+    if (phase === "import") renderImport();
+    else if (phase === "sort") startSession("sort", sortQ, "分拣");
     else if (phase === "morning") startSession("morning", hard.slice(0, 8), "出车");
     else if (phase === "evening") startSession("evening", evening.list,
       "调车 · " + dowCN(new Date(evening.target + "T00:00:00")) + "那份");
   };
+  const demoBtn = $("#btn-demo");
+  if (demoBtn) demoBtn.onclick = function(){ seedDemo(); renderHome(); toast("先玩两天，随时可以清空重来"); };
   $("#btn-words").onclick = openPanel;
   $("#btn-sound").onclick = shiftSound;
 
