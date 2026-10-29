@@ -3,24 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#0b0b0d">
-<title>Ferrari 车队</title>
+<meta name="theme-color" content="#2a1a3c">
+<title>猴子摘香蕉</title>
 <style>
   :root{
-    --red:#e5121f;
-    --red-d:#a30d17;
-    --yellow:#f5c518;
-    --ink:#0b0b0d;
-    --ink2:#15161a;
-    --ink3:#1e2026;
-    --line:#2a2c33;
-    --txt:#f2f3f5;
-    --dim:#8b8f99;
+    --red:#f2801f;          /* 猴毛橙（主色） */
+    --red-d:#b8570d;
+    --yellow:#ffc93c;       /* 香蕉黄 */
+    --leaf:#3fbf7f;         /* 叶子绿 */
+    --ink:#14101c;          /* 暮色紫 */
+    --ink2:#1d1628;
+    --ink3:#2a1f38;
+    --line:#3b2b4d;
+    --txt:#f7f1e6;
+    --dim:#a392ad;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;height:100%}
   body{
-    background:var(--ink);color:var(--txt);
+    color:var(--txt);
+    background:
+      radial-gradient(120% 55% at 50% 6%, rgba(255,201,60,.12), transparent 60%),
+      linear-gradient(180deg,#2a1a3c 0%, #3d2340 42%, #4a2a37 72%, #241827 100%);
+    background-attachment:fixed;
     font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
     overflow:hidden;user-select:none;
   }
@@ -38,28 +43,48 @@
   .ghost{background:none;border:1px solid var(--line);color:var(--dim);
     font-size:12px;padding:6px 11px;border-radius:999px;flex:none}
 
-  .garage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  .garage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;position:relative}
+  .garage::before{
+    content:"";position:absolute;left:50%;top:50%;width:280px;height:280px;
+    transform:translate(-50%,-62%);border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle, rgba(255,201,60,.13), transparent 68%);
+  }
   .road{
-    width:186px;height:3px;margin-top:10px;border-radius:2px;
-    background:repeating-linear-gradient(90deg,rgba(245,197,24,.7) 0 13px,transparent 13px 28px);
+    width:206px;height:7px;margin-top:12px;border-radius:5px;position:relative;
+    background:linear-gradient(180deg,#4a2f1a,#26160b);
+    box-shadow:0 2px 10px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.08);
   }
+  .road::before,.road::after{
+    content:"";position:absolute;top:-6px;width:16px;height:9px;border-radius:50% 10% 50% 10%;
+    background:linear-gradient(140deg,#4aa86a,#2c7a48);
+  }
+  .road::before{left:-6px;transform:rotate(-18deg)}
+  .road::after{right:-6px;transform:rotate(18deg) scaleX(-1)}
   .car{
-    font-size:84px;line-height:1;filter:drop-shadow(0 12px 26px rgba(229,18,31,.4));
+    font-size:84px;line-height:1;position:relative;
+    filter:drop-shadow(0 12px 26px rgba(255,201,60,.35)) saturate(1.15) brightness(1.06);
     transition:transform .35s cubic-bezier(.2,.9,.3,1.4);
+    animation:bob 2.6s ease-in-out infinite;
   }
-  .car.hit{transform:translateX(6px) rotate(-2deg)}
+  @keyframes bob{
+    0%,100%{transform:translateY(0) rotate(-1deg)}
+    50%{transform:translateY(-7px) rotate(1.5deg)}
+  }
+  .car.hit{transform:translateX(7px) rotate(-4deg)}
   .car.run{animation:run .95s cubic-bezier(.4,0,.3,1) forwards}
   @keyframes run{
-    0%{transform:translateX(-14px)}
-    55%{transform:translateX(40vw)}
-    100%{transform:translateX(150vw)}
+    0%{transform:translateX(-14px) translateY(0)}
+    25%{transform:translateX(18vw) translateY(-26px)}
+    55%{transform:translateX(46vw) translateY(0)}
+    75%{transform:translateX(78vw) translateY(-18px)}
+    100%{transform:translateX(150vw) translateY(0)}
   }
   .teamname{font-size:13px;letter-spacing:.22em;color:var(--dim);margin-top:14px}
-  .lvl{display:flex;gap:5px;margin-top:10px;align-items:flex-end;height:14px}
-  .lvl i{width:4px;height:8px;border-radius:2px;background:var(--ink3)}
-  .lvl i.on{height:14px;background:var(--yellow)}
+  .lvl{display:flex;gap:3px;margin-top:10px;align-items:center;height:16px}
+  .lvl i{font-size:11px;font-style:normal;line-height:1;opacity:.26;filter:grayscale(1)}
+  .lvl i.on{opacity:1;filter:none;text-shadow:0 0 8px rgba(255,201,60,.55)}
   .parts{margin-top:18px;display:flex;align-items:baseline;gap:7px}
-  .parts b{font-size:30px;font-weight:800;letter-spacing:.02em}
+  .parts b{font-size:30px;font-weight:800;letter-spacing:.02em;color:var(--yellow)}
   .parts span{font-size:12px;color:var(--dim)}
   .guide{display:flex;flex-direction:column;gap:8px;margin-top:24px;width:216px}
   .gb{font-size:12.5px;color:var(--dim);text-align:center;letter-spacing:.04em;
@@ -69,7 +94,7 @@
 
   .cta{margin:0 20px 14px;border:0;border-radius:16px;padding:19px;font-size:17px;font-weight:800;
     letter-spacing:.06em;color:#fff;background:linear-gradient(180deg,var(--red),var(--red-d));
-    box-shadow:0 8px 26px rgba(229,18,31,.28)}
+    box-shadow:0 8px 26px rgba(242,128,31,.32)}
   .cta:active{transform:translateY(1px);filter:brightness(.94)}
   .cta.alt{background:var(--ink3);color:var(--txt);box-shadow:none;border:1px solid var(--line)}
   .cta[disabled]{opacity:.4}
@@ -117,8 +142,8 @@
     border-radius:13px;padding:17px;font-size:19px;font-weight:600;letter-spacing:.03em;text-align:left
   }
   .opt:active{background:var(--ink3)}
-  .opt.good{border-color:var(--yellow);background:rgba(245,197,24,.13)}
-  .opt.bad{border-color:var(--red);background:rgba(229,18,31,.14)}
+  .opt.good{border-color:var(--yellow);background:rgba(255,201,60,.14)}
+  .opt.bad{border-color:var(--red);background:rgba(242,128,31,.16)}
   .speak{
     background:var(--ink3);border:1px solid var(--line);color:var(--txt);
     border-radius:999px;padding:11px 22px;font-size:15px
@@ -157,14 +182,14 @@
   .combo{position:fixed;left:50%;top:15%;transform:translate(-50%,6px) scale(.8);z-index:41;
     font-size:30px;font-weight:900;color:var(--yellow);opacity:0;
     transition:opacity .16s,transform .2s cubic-bezier(.2,.9,.3,1.5);
-    pointer-events:none;text-shadow:0 0 18px rgba(245,197,24,.55)}
+    pointer-events:none;text-shadow:0 0 18px rgba(255,201,60,.6)}
   .combo.on{opacity:1;transform:translate(-50%,0) scale(1)}
   .vignette{position:fixed;inset:0;pointer-events:none;z-index:39;opacity:0;transition:opacity .13s;
-    background:radial-gradient(circle at 50% 46%,transparent 42%,rgba(229,18,31,.26) 100%)}
+    background:radial-gradient(circle at 50% 46%,transparent 42%,rgba(160,90,30,.22) 100%)}
   .vignette.on{opacity:1}
-  .checker{height:16px;width:80%;border-radius:3px;
-    background:repeating-conic-gradient(#e9eaee 0% 25%, #14151a 0% 50%) 50% / 16px 16px;
-    opacity:.85}
+  .checker{height:16px;width:80%;border-radius:8px;
+    background:repeating-conic-gradient(#ffc93c 0% 25%, #2f7a4d 0% 50%) 50% / 16px 16px;
+    opacity:.9}
 </style>
 </head>
 <body>
@@ -448,10 +473,11 @@ const SND = {
   tap(){ this.tone(760, 0.028, "square", 0.06); },
   correct(combo){
     const n = Math.min(combo || 1, 10);
-    const base = 523.25 * Math.pow(2, n / 12);
-    this.tone(base, 0.09, "triangle", 0.24);
-    this.tone(base * 1.5, 0.13, "sine", 0.14, 0.045);
-    this.noise(0.05, 0.05, 2600);
+    const base = 587.33 * Math.pow(2, n / 12);
+    this.tone(base, 0.085, "triangle", 0.24, 0, base * 1.28);   // 拔起来
+    this.tone(base * 1.5, 0.12, "sine", 0.12, 0.05);
+    this.noise(0.045, 0.045, 3000);
+    if (n >= 3) this.tone(base * 2.4, 0.05, "sine", 0.07, 0.11); // 小猴啾一声
   },
   wrong(){
     this.tone(168, 0.14, "sine", 0.2, 0, 118);
@@ -462,11 +488,17 @@ const SND = {
     this.tone(294, 0.14, "sine", 0.12, 0.09);
   },
   finish(){
-    this.tone(78, 0.5, "sawtooth", 0.16, 0, 310);
-    this.noise(0.45, 0.06, 900);
-    const notes = [523.25, 659.25, 783.99, 1046.5];
-    notes.forEach(function(f, i){ this.tone(f, 0.22, "triangle", 0.17, 0.35 + i * 0.085); }, this);
-    this.noise(0.25, 0.05, 3200);
+    // 小猴欢呼：三声上行啾啾
+    const chirps = [740, 880, 1046.5];
+    chirps.forEach(function(f, i){
+      const t = 0.04 + i * 0.11;
+      this.tone(f, 0.09, "sine", 0.17, t, f * 1.18);
+      this.tone(f * 2, 0.055, "triangle", 0.06, t + 0.015, f * 2.2);
+    }, this);
+    // 香蕉落筐 + 叶子沙沙
+    this.noise(0.3, 0.05, 2400);
+    this.tone(196, 0.2, "triangle", 0.1, 0.42);
+    this.tone(261.63, 0.24, "triangle", 0.1, 0.5);
   }
 };
 
@@ -505,6 +537,11 @@ const FX = (function(){
       if (p.kind === "c"){
         ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 7 + p.rot);
         ctx.fillRect(-3.5, -2.2, 7, 4.4); ctx.restore();
+      } else if (p.kind === "b"){
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot + p.life * 3);
+        ctx.strokeStyle = p.color; ctx.lineWidth = 3; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.arc(0, 3, 5, Math.PI * 1.18, Math.PI * 1.82); ctx.stroke();
+        ctx.restore();
       } else if (p.kind === "l"){
         ctx.fillRect(p.x, p.y, p.size * 9, 2);
       } else {
@@ -516,8 +553,8 @@ const FX = (function(){
     else { raf = 0; last = 0; }
   }
 
-  const COLORS = ["#f5c518", "#ffd85e", "#e5121f", "#ff6b45", "#ffffff"];
-  const CAR_COLORS = ["#f5c518", "#e9eaee", "#e5121f"];
+  const COLORS = ["#ffc93c", "#ffe08a", "#3fbf7f", "#a8e6c0", "#fff6d8"];
+  const CAR_COLORS = ["#ffc93c", "#3fbf7f", "#8a5a2b"];
 
   function burst(cx, cy, n, colors){
     const cs = colors || COLORS;
@@ -525,9 +562,10 @@ const FX = (function(){
       const a = Math.random() * Math.PI * 2;
       const sp = 110 + Math.random() * 280;
       parts.push({
-        kind: "p", x: cx, y: cy,
+        kind: (i % 3 === 0) ? "b" : "p", x: cx, y: cy,
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 70,
-        life: 0, ttl: 0.5 + Math.random() * 0.4,
+        rot: Math.random() * 6.28,
+        life: 0, ttl: 0.5 + Math.random() * 0.45,
         size: 1.6 + Math.random() * 3,
         color: cs[(Math.random() * cs.length) | 0]
       });
@@ -540,7 +578,7 @@ const FX = (function(){
       const a = Math.random() * Math.PI * 2;
       const sp = 150 + Math.random() * 320;
       parts.push({
-        kind: "c", x: cx, y: cy,
+        kind: i % 4 === 0 ? "p" : "b", x: cx, y: cy,
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 150,
         g: 620, rot: Math.random() * 6.28,
         life: 0, ttl: 0.8 + Math.random() * 0.5,
@@ -556,7 +594,7 @@ const FX = (function(){
         kind: "l", x: W + 20, y: H * (0.2 + Math.random() * 0.6),
         vx: -(700 + Math.random() * 500), vy: 0, g: 0,
         life: 0, ttl: 0.42, size: 0.6 + Math.random() * 0.9,
-        color: "rgba(245,197,24,.5)"
+        color: "rgba(255,201,60,.55)"
       });
     }
     kick();
@@ -565,7 +603,7 @@ const FX = (function(){
   function confetti(){
     for (let i = 0; i < 90; i++){
       parts.push({
-        kind: "c", x: Math.random() * W, y: -20 - Math.random() * H * 0.5,
+        kind: i % 3 === 0 ? "p" : "b", x: Math.random() * W, y: -20 - Math.random() * H * 0.5,
         vx: (Math.random() - 0.5) * 120, vy: 40 + Math.random() * 90,
         g: 180, rot: Math.random() * 6.28,
         life: 0, ttl: 1.6 + Math.random() * 1.2,
@@ -717,30 +755,30 @@ function renderHome(){
     hint = "还没有词，先把这周的默写单贴进来";
   } else if (weekend && sortQ.length){
     phase = "sort";
-    cta = "开始分拣";
-    hint = "新词单到了，先看看哪些已经会了（" + sortQ.length + " 个词）";
+    cta = "看一圈";
+    hint = "新词单到了，先认一圈（" + sortQ.length + " 个词）";
   } else if (hard.length){
     phase = "morning";
-    cta = "出车";
-    hint = "今天要跑 " + Math.min(8, hard.length) + " 个弯";
+    cta = "去摘香蕉";
+    hint = "今天要摘 " + Math.min(8, hard.length) + " 根";
   } else if (evening.list.length){
     phase = "evening";
-    cta = "调车";
+    cta = "练一练";
     hint = dowCN(new Date(evening.target + "T00:00:00")) + "那份，" + evening.list.length + " 个词";
   } else if (sortQ.length){
     phase = "sort";
-    cta = "开始分拣";
-    hint = sortQ.length + " 个词还等着分";
+    cta = "看一圈";
+    hint = sortQ.length + " 个词还等着认";
   } else {
-    cta = "今天跑完了";
-    hint = "车在车库停着";
+    cta = "今天摘完了";
+    hint = "猴子在树上打盹";
   }
 
   const guide = empty
     ? '<div class="guide">' +
         '<div class="gb">① 贴词单</div>' +
-        '<div class="gb">② 周末分拣</div>' +
-        '<div class="gb">③ 晚上调车 · 早上出车</div>' +
+        '<div class="gb">② 认一圈</div>' +
+        '<div class="gb">③ 晚上练 · 早上摘</div>' +
       "</div>" +
       '<button class="linkbtn" id="btn-demo">先灌 20 个演示词，看看手感</button>'
     : "";
@@ -749,19 +787,19 @@ function renderHome(){
     '<div class="screen">' +
       '<div class="bar">' +
         '<span class="stripe"></span><span class="stripe y"></span>' +
-        "<h1>FERRARI 车队</h1>" +
+        "<h1>🍌 猴子摘香蕉</h1>" +
         '<span class="spacer"></span>' +
         soundBtn() +
         '<button class="ghost" id="btn-words">词单</button>' +
       "</div>" +
       '<div class="garage">' +
-        '<div class="car" id="car">🏎️</div>' +
+        '<div class="car" id="car">🐵</div>' +
         '<div class="road"></div>' +
-        '<div class="teamname">ROOKIE · ' + (lvl + 1) + " 段</div>" +
+        '<div class="teamname">小猴 · ' + (lvl + 1) + " 级</div>" +
         '<div class="lvl">' + Array.from({ length: 9 }, function(_, i){
-          return '<i class="' + (i < lvl ? "on" : "") + '"></i>';
+          return '<i class="' + (i < lvl ? "on" : "") + '">🍌</i>';
         }).join("") + "</div>" +
-        '<div class="parts"><b>' + state.car.parts + "</b><span>零件</span></div>" +
+        '<div class="parts"><b>' + state.car.parts + "</b><span>香蕉</span></div>" +
         guide +
       "</div>" +
       '<button class="cta" id="btn-go" ' + (phase ? "" : "disabled") + ">" + cta + "</button>" +
@@ -770,13 +808,13 @@ function renderHome(){
 
   $("#btn-go").onclick = function(){
     if (phase === "import") renderImport();
-    else if (phase === "sort") startSession("sort", sortQ, "分拣");
-    else if (phase === "morning") startSession("morning", hard.slice(0, 8), "出车");
+    else if (phase === "sort") startSession("sort", sortQ, "认一圈");
+    else if (phase === "morning") startSession("morning", hard.slice(0, 8), "去摘香蕉");
     else if (phase === "evening") startSession("evening", evening.list,
-      "调车 · " + dowCN(new Date(evening.target + "T00:00:00")) + "那份");
+      "练一练 · " + dowCN(new Date(evening.target + "T00:00:00")) + "那份");
   };
   const demoBtn = $("#btn-demo");
-  if (demoBtn) demoBtn.onclick = function(){ seedDemo(); renderHome(); toast("先玩两天，随时可以清空重来"); };
+  if (demoBtn) demoBtn.onclick = function(){ seedDemo(); renderHome(); toast("先玩一会儿，随时可以清空重来"); };
   $("#btn-words").onclick = openPanel;
   $("#btn-sound").onclick = shiftSound;
 
@@ -812,7 +850,7 @@ function openPanel(){
   }).join("");
 
   const last = state.lastSession;
-  const kindCN = { sort: "分拣", morning: "出车", evening: "调车" };
+  const kindCN = { sort: "认一圈", morning: "摘香蕉", evening: "练一练" };
   const lastHtml = last
     ? '<h2>最近一局 · ' + esc(last.date) + " " + esc(kindCN[last.kind] || last.kind) + "</h2>" +
       last.items.map(function(it){
@@ -824,13 +862,13 @@ function openPanel(){
     : "";
 
   panelEl.innerHTML =
-    '<div class="row"><h2 style="flex:1;margin:0">车队数据（只给家长看）</h2>' +
+    '<div class="row"><h2 style="flex:1;margin:0">猴子账本（只给家长看）</h2>' +
       '<button class="ghost" id="panel-x">关闭</button></div>' +
     "<h2>总览</h2>" +
     '<div class="kv"><span>词总数</span><b>' + ws.length + "</b></div>" +
     '<div class="kv"><span>已归档</span><b>' +
       ws.filter(function(w){ return w.retired; }).length + "</b></div>" +
-    '<div class="kv"><span>零件</span><b>' + state.car.parts + "</b></div>" +
+    '<div class="kv"><span>香蕉</span><b>' + state.car.parts + "</b></div>" +
     '<div class="kv"><span>还没稳的词</span><b>' + hard.length + "</b></div>" +
     "<h2>按默写日</h2>" + rows +
     "<h2>还没稳的词</h2>" + (hardList || '<div class="kv"><span>没有</span><b>—</b></div>') +
@@ -847,7 +885,7 @@ function openPanel(){
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "ferrari-words-" + todayStr() + ".json";
+    a.download = "monkey-words-" + todayStr() + ".json";
     a.click();
   };
   $("#panel-reset").onclick = function(){
@@ -1078,12 +1116,12 @@ function answer(word, ok, layer){
     FX.burst(window.innerWidth / 2, window.innerHeight * 0.42, first ? 22 : 12);
     if (first && s.kind !== "sort"){
       FX.splurge(window.innerWidth / 2, window.innerHeight * 0.44);
-      flyText("零件 +1");
+      flyText("🍌 +1");
     }
     if (s.combo >= 5) FX.speedLines();
     showCombo(s.combo);
     const prog = $("#prog");
-    if (prog) prog.style.boxShadow = s.combo >= 3 ? "0 0 14px rgba(245,197,24,.55)" : "none";
+    if (prog) prog.style.boxShadow = s.combo >= 3 ? "0 0 14px rgba(255,201,60,.6)" : "none";
     haptic(12);
 
     flash("✓", true);
@@ -1165,31 +1203,31 @@ function endSession(){
     ? Math.floor(s.results.length / 4)
     : s.results.filter(function(r){ return r.firstTry; }).length;
   const lvl = lvlOf(state.car.parts);
-  const kindWord = s.kind === "sort" ? "分好了"
-    : (s.kind === "morning" ? "出车完成" : "车调好了");
+  const kindWord = s.kind === "sort" ? "认完了"
+    : (s.kind === "morning" ? "香蕉摘到了" : "练好了");
 
   app.innerHTML =
     '<div class="screen">' +
       '<div class="bar">' +
         '<span class="stripe"></span><span class="stripe y"></span>' +
-        '<h1>FERRARI 车队</h1><span class="spacer"></span>' +
+        '<h1>🍌 猴子摘香蕉</h1><span class="spacer"></span>' +
         soundBtn() +
       "</div>" +
       '<div class="finish">' +
-        '<div class="car' + (wasFull ? " run" : "") + '" id="car">🏎️</div>' +
+        '<div class="car' + (wasFull ? " run" : "") + '" id="car">🐵</div>' +
         '<div class="checker" style="margin:12px 0 6px"></div>' +
         '<div class="big">' + kindWord + "</div>" +
         '<div class="sub">' + (gained
-          ? '车上多了 <b style="color:var(--yellow)">' + gained + "</b> 个零件"
-          : "车在跑") + "</div>" +
+          ? '摘到 <b style="color:var(--yellow)">' + gained + "</b> 根香蕉"
+          : "猴子在树上") + "</div>" +
         '<div class="lvl" style="margin-top:14px">' + Array.from({ length: 9 }, function(_, i){
-          return '<i class="' + (i < lvl ? "on" : "") + '"></i>';
+          return '<i class="' + (i < lvl ? "on" : "") + '">🍌</i>';
         }).join("") + "</div>" +
         '<div class="sub" style="margin-top:10px;color:var(--dim)">' +
-          (lvl + 1) + " 段车队 · 共 " + state.car.parts + " 个零件</div>" +
+          (lvl + 1) + " 级 · 共 " + state.car.parts + " 根香蕉</div>" +
       "</div>" +
-      '<button class="cta alt" id="fin-back">回车库</button>' +
-      '<div class="hint">' + (wasFull ? "今天的跑完了" : "") + "</div>" +
+      '<button class="cta alt" id="fin-back">回猴山</button>' +
+      '<div class="hint">' + (wasFull ? "今天的摘完了" : "") + "</div>" +
     "</div>";
 
   $("#fin-back").onclick = function(){ SND.tap(); renderHome(); };
@@ -1233,7 +1271,7 @@ function runShot(shot){
       w.dictDate = today; w.state = "hard"; w.box = 1;
     });
     save();
-    startSession("morning", state.words.slice(0, shot === "typing" ? 2 : 4), "出车");
+    startSession("morning", state.words.slice(0, shot === "typing" ? 2 : 4), "去摘香蕉");
     if (shot === "typing"){
       const a = $("#ans");
       if (a){
@@ -1260,12 +1298,12 @@ function runShot(shot){
   }
 
   if (shot === "sort"){
-    startSession("sort", buildSortQueue(state, now).slice(0, 5), "分拣");
+    startSession("sort", buildSortQueue(state, now).slice(0, 5), "认一圈");
     return;
   }
 
   if (shot === "done"){
-    startSession("morning", state.words.slice(0, 3), "出车");
+    startSession("morning", state.words.slice(0, 3), "去摘香蕉");
     session.results = [{ id: session.queue[0].id, firstTry: true }];
     session.i = session.queue.length;
     endSession();
