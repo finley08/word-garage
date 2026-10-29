@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0d">
+<title>Ferrari 车队</title>
+<style>
+  :root{
+    --red:#e5121f;
+    --red-d:#a30d17;
+    --yellow:#f5c518;
+    --ink:#0b0b0d;
+    --ink2:#15161a;
+    --ink3:#1e2026;
+    --line:#2a2c33;
+    --txt:#f2f3f5;
+    --dim:#8b8f99;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    background:var(--ink);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    overflow:hidden;user-select:none;
+  }
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .screen{flex:1;display:flex;flex-direction:column;min-height:0}
+  .pad{padding:18px 20px}
+
+  .bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)}
+  .bar .stripe{width:3px;height:16px;border-radius:2px;background:var(--red)}
+  .bar .stripe.y{background:var(--yellow)}
+  .bar h1{margin:0;font-size:14px;letter-spacing:.14em;font-weight:700;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .bar .spacer{flex:1}
+  .ghost{background:none;border:1px solid var(--line);color:var(--dim);
+    font-size:12px;padding:6px 11px;border-radius:999px;flex:none}
+
+  .garage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  .road{
+    width:186px;height:3px;margin-top:10px;border-radius:2px;
+    background:repeating-linear-gradient(90deg,rgba(245,197,24,.7) 0 13px,transparent 13px 28px);
+  }
+  .car{
+    font-size:84px;line-height:1;filter:drop-shadow(0 12px 26px rgba(229,18,31,.4));
+    transition:transform .35s cubic-bezier(.2,.9,.3,1.4);
+  }
+  .car.hit{transform:translateX(6px) rotate(-2deg)}
+  .car.run{animation:run .95s cubic-bezier(.4,0,.3,1) forwards}
+  @keyframes run{
+    0%{transform:translateX(-14px)}
+    55%{transform:translateX(40vw)}
+    100%{transform:translateX(150vw)}
+  }
+  .teamname{font-size:13px;letter-spacing:.22em;color:var(--dim);margin-top:14px}
+  .lvl{display:flex;gap:5px;margin-top:10px;align-items:flex-end;height:14px}
+  .lvl i{width:4px;height:8px;border-radius:2px;background:var(--ink3)}
+  .lvl i.on{height:14px;background:var(--yellow)}
+  .parts{margin-top:18px;display:flex;align-items:baseline;gap:7px}
+  .parts b{font-size:30px;font-weight:800;letter-spacing:.02em}
+  .parts span{font-size:12px;color:var(--dim)}
+
+  .cta{margin:0 20px 14px;border:0;border-radius:16px;padding:19px;font-size:17px;font-weight:800;
+    letter-spacing:.06em;color:#fff;background:linear-gradient(180deg,var(--red),var(--red-d));
+    box-shadow:0 8px 26px rgba(229,18,31,.28)}
+  .cta:active{transform:translateY(1px);filter:brightness(.94)}
+  .cta.alt{background:var(--ink3);color:var(--txt);box-shadow:none;border:1px solid var(--line)}
+  .cta[disabled]{opacity:.4}
+  .hint{text-align:center;font-size:12px;color:var(--dim);padding-bottom:18px;min-height:18px}
+
+  textarea{
+    width:100%;flex:1;min-height:170px;background:var(--ink2);color:var(--txt);
+    border:1px solid var(--line);border-radius:14px;padding:14px;font-size:14px;
+    line-height:1.65;font-family:ui-monospace,Menlo,Consolas,monospace;resize:none;
+  }
+  textarea:focus{outline:none;border-color:var(--red)}
+  .row{display:flex;gap:10px;align-items:center}
+  .preview{flex:1;overflow:auto;margin-top:12px;border:1px solid var(--line);border-radius:14px}
+  .prow{display:flex;justify-content:space-between;gap:12px;padding:11px 14px;
+    border-bottom:1px solid var(--line);font-size:14px}
+  .prow:last-child{border-bottom:0}
+  .prow .en{font-weight:700}
+  .prow .zh{color:var(--dim)}
+  .prow .d{color:var(--yellow);font-size:12px;font-variant-numeric:tabular-nums;flex:none}
+  .prow.bad .en{color:var(--red)}
+  .sect{font-size:11px;letter-spacing:.2em;color:var(--dim);margin:16px 0 8px}
+
+  .qwrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 22px;gap:22px}
+  .qtop{display:flex;align-items:center;gap:10px}
+  .qtop .prog{flex:1;height:3px;background:var(--ink3);border-radius:2px;overflow:hidden;transition:box-shadow .2s}
+  .qtop .prog i{display:block;height:100%;background:var(--yellow);transition:width .25s}
+  .qtop .n{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .prompt{font-size:34px;font-weight:800;letter-spacing:.02em;text-align:center;line-height:1.25;word-break:break-word}
+  .prompt small{display:block;font-size:13px;font-weight:500;color:var(--dim);letter-spacing:.06em;margin-top:10px}
+  .slots{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:4px}
+  .slots span{
+    width:26px;height:38px;border-bottom:2px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;font-weight:700;color:var(--yellow);transition:border-color .2s
+  }
+  .slots span.gap{border-bottom:0}
+  #ans{
+    width:100%;text-align:center;font-size:23px;font-weight:700;letter-spacing:.12em;
+    background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:15px;color:var(--txt);
+  }
+  #ans:focus{outline:none;border-color:var(--yellow)}
+  .opts{display:flex;flex-direction:column;gap:11px}
+  .opt{
+    background:var(--ink2);border:1px solid var(--line);color:var(--txt);
+    border-radius:13px;padding:17px;font-size:19px;font-weight:600;letter-spacing:.03em;text-align:left
+  }
+  .opt:active{background:var(--ink3)}
+  .opt.good{border-color:var(--yellow);background:rgba(245,197,24,.13)}
+  .opt.bad{border-color:var(--red);background:rgba(229,18,31,.14)}
+  .speak{
+    background:var(--ink3);border:1px solid var(--line);color:var(--txt);
+    border-radius:999px;padding:11px 22px;font-size:15px
+  }
+  .flash{position:fixed;left:0;right:0;top:46%;text-align:center;font-size:56px;font-weight:800;
+    pointer-events:none;opacity:0;transition:opacity .18s,transform .4s}
+  .flash.on{opacity:1;transform:translateY(-16px)}
+
+  .finish{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0 26px}
+  .finish .big{font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center;line-height:1.5}
+  .finish .sub{color:var(--dim);font-size:14px;text-align:center;line-height:1.7}
+  .finish .car{font-size:76px;margin-bottom:6px}
+
+  .panel{position:fixed;inset:0;background:#0a0a0c;z-index:100;overflow:auto;padding:22px;
+    display:none;flex-direction:column;gap:10px}
+  .panel.on{display:flex}
+  .panel h2{font-size:13px;letter-spacing:.2em;color:var(--dim);margin:6px 0}
+  .kv{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:9px 0;
+    border-bottom:1px solid var(--line)}
+  .kv b{color:var(--yellow);font-variant-numeric:tabular-nums;flex:none}
+  .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);
+    background:var(--ink3);border:1px solid var(--line);color:var(--txt);
+    padding:10px 16px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;
+    pointer-events:none;z-index:110;max-width:86vw;text-align:center}
+  .toast.on{opacity:1}
+
+  #fx{position:fixed;inset:0;pointer-events:none;z-index:40}
+  .fly{position:fixed;left:50%;top:54%;transform:translate(-50%,0);z-index:41;
+    font-size:19px;font-weight:800;letter-spacing:.04em;color:var(--yellow);
+    pointer-events:none;animation:flyUp .95s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes flyUp{
+    0%{opacity:0;transform:translate(-50%,8px) scale(.85)}
+    18%{opacity:1}
+    100%{opacity:0;transform:translate(-50%,-76px) scale(1.08)}
+  }
+  .combo{position:fixed;left:50%;top:15%;transform:translate(-50%,6px) scale(.8);z-index:41;
+    font-size:30px;font-weight:900;color:var(--yellow);opacity:0;
+    transition:opacity .16s,transform .2s cubic-bezier(.2,.9,.3,1.5);
+    pointer-events:none;text-shadow:0 0 18px rgba(245,197,24,.55)}
+  .combo.on{opacity:1;transform:translate(-50%,0) scale(1)}
+  .vignette{position:fixed;inset:0;pointer-events:none;z-index:39;opacity:0;transition:opacity .13s;
+    background:radial-gradient(circle at 50% 46%,transparent 42%,rgba(229,18,31,.26) 100%)}
+  .vignette.on{opacity:1}
+  .checker{height:16px;width:80%;border-radius:3px;
+    background:repeating-conic-gradient(#e9eaee 0% 25%, #14151a 0% 50%) 50% / 16px 16px;
+    opacity:.85}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+<div class="panel" id="panel"></div>
+
+<script>
+"use strict";
+
+/* ===================== PURE ===================== */
+/* 纯逻辑：不碰 DOM 和 localStorage，可单独在 Node 里跑测试 */
+
+function pad2(n){ return String(n).padStart(2, "0"); }
+function ymd(d){ return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+function startOfDay(now){ return new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
+function addDays(d, n){
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() + n);
+  return x;
+}
+function dowCN(d){ return ["周日","周一","周二","周三","周四","周五","周六"][d.getDay()]; }
+
+/** 下一个周一，严格晚于 today */
+function nextMonday(now){
+  const d = startOfDay(now);
+  let delta = (8 - d.getDay()) % 7;
+  if (delta === 0) delta = 7;
+  return addDays(d, delta);
+}
+
+/** 下一个默写日：从明天起第一个周一到周五 */
+function nextDictDate(now){
+  let d = addDays(startOfDay(now), 1);
+  for (let i = 0; i < 8; i++){
+    const wd = d.getDay();
+    if (wd >= 1 && wd <= 5) return d;
+    d = addDays(d, 1);
+  }
+  return d;
+}
+
+const CJK = /[\u4e00-\u9fff]/;
+const UNIT_RE = /(?:^|\s)(\d[A-Z]\d*U\d+|[Uu]\d+)(?=\s|$)/;
+const IPA_RE = /\/[^\/]{1,40}\//;
+
+/**
+ * 解析一行词条，支持：
+ *   tiger 虎
+ *   tiger /ˈtaɪɡər/ 老虎
+ *   safari park, 野生动物园
+ *   1. whale 鲸
+ *   lion 狮子 5AU4
+ * 返回 {en, zh, ipa, unit}；无法解析返回 null
+ */
+function parseLine(raw){
+  let line = String(raw || "").trim();
+  if (!line) return null;
+  line = line.replace(/^\d+\s*[.、)]\s*/, "");
+
+  let unit = "";
+  const um = line.match(UNIT_RE);
+  if (um){
+    unit = um[1].toUpperCase();
+    line = (line.slice(0, um.index) + " " + line.slice(um.index + um[0].length)).trim();
+  }
+
+  let ipa = "";
+  const im = line.match(IPA_RE);
+  if (im){
+    ipa = im[0];
+    line = (line.slice(0, im.index) + " " + line.slice(im.index + im[0].length)).trim();
+  }
+
+  const ci = line.search(CJK);
+  if (ci < 0) return null;
+
+  let en = line.slice(0, ci).replace(/[,;:、\s]+$/, "").trim();
+  let zh = line.slice(ci).replace(/^[\s,;:、]+/, "").trim();
+  if (!en) return null;
+  if (!/^[A-Za-z][A-Za-z' -]*$/.test(en)) return null;
+
+  en = en.replace(/\s+/g, " ").toLowerCase();
+  zh = zh.replace(/\s+/g, " ");
+  return { en, zh, ipa, unit };
+}
+
+/** 解析整段文本。以 # 或 【 开头的行算当天分隔，例如 "# 周一" */
+function parseWords(text){
+  const items = [], failed = [];
+  const lines = String(text || "").split(/\r?\n/);
+  for (const raw of lines){
+    const line = raw.trim();
+    if (!line) continue;
+    if (/^(#|＃|【|\[)/.test(line)){
+      items.push({ __day: true, label: line.replace(/^[#＃【\[]+/, "").replace(/[】\]]+$/, "").trim() });
+      continue;
+    }
+    const w = parseLine(line);
+    if (w) items.push(w); else failed.push(raw);
+  }
+  return { items, failed };
+}
+
+/** 给词条分配默写日：有分隔行按其指定周几，否则从下周一起均摊到周一到周五 */
+function assignDates(items, now){
+  const monday = nextMonday(now);
+  const DAYS = "一二三四五";
+  const out = [];
+  let cur = null;
+
+  for (const it of items){
+    if (it.__day){
+      const m = it.label.match(/周([一二三四五])/);
+      cur = m ? addDays(monday, DAYS.indexOf(m[1])) : cur;
+      continue;
+    }
+    out.push(Object.assign({}, it, { dictDate: cur ? ymd(cur) : null }));
+  }
+
+  const missing = out.filter(function(w){ return !w.dictDate; });
+  if (missing.length){
+    const per = Math.ceil(missing.length / 5);
+    let k = 0;
+    for (const w of out){
+      if (w.dictDate) continue;
+      w.dictDate = ymd(addDays(monday, Math.min(4, Math.floor(k / per))));
+      k++;
+    }
+  }
+  return out;
+}
+
+function wordsOn(state, dateStr){
+  return state.words.filter(function(w){ return !w.retired && w.dictDate === dateStr; });
+}
+
+/** 早上临场局：今天那份里还没稳的，最多 8 个 */
+function buildMorningQueue(state, now){
+  const todays = wordsOn(state, ymd(now));
+  const hard = todays.filter(function(w){ return w.state === "hard"; });
+  if (hard.length) return hard.slice(0, 8);
+  const soft = todays.filter(function(w){ return w.box < 3; });
+  if (soft.length) return soft.slice(0, 8);
+  return state.words.filter(function(w){ return !w.retired && w.box < 3; }).slice(0, 5);
+}
+
+/** 晚上准备局：明天那份全部词，最多 30 个 */
+function buildEveningQueue(state, now){
+  const target = nextDictDate(now);
+  return { target: ymd(target), list: wordsOn(state, ymd(target)).slice(0, 30) };
+}
+
+/** 周五分拣：所有还没分过的未来词 */
+function buildSortQueue(state, now){
+  const today = ymd(now);
+  return state.words.filter(function(w){
+    return !w.retired && !w.sorted && w.dictDate && w.dictDate > today;
+  });
+}
+
+/** 题型：盒 1 给首字母，盒 2/3 全拼 */
+function layerFor(word){
+  return word.box <= 1 ? "cued" : "full";
+}
+
+/** 生成提示槽 */
+function slotsFor(en, layer){
+  return en.split("").map(function(ch, i){
+    if (ch === " " || ch === "-") return { ch: "gap", show: false };
+    if (i === 0 && layer === "cued") return { ch: ch, show: true };
+    return { ch: "", show: false };
+  });
+}
+
+function normalize(s){
+  return String(s || "").toLowerCase().replace(/[^a-z' ]/g, "").replace(/\s+/g, " ").trim();
+}
+function isCorrect(answer, word, layer){
+  const a = normalize(answer);
+  const t = normalize(word.en);
+  if (!a) return false;
+  return a === t;
+}
+
+/** 结算一局：写回盒与状态 */
+function applySession(state, results, dayStr){
+  let gained = 0;
+  for (const r of results){
+    const w = state.words.filter(function(x){ return x.id === r.id; })[0];
+    if (!w) continue;
+    if (r.firstTry){
+      w.box = Math.min(3, w.box + 1);
+      w.state = w.box >= 2 ? "ok" : "hard";
+      gained++;
+    } else {
+      w.box = 1;
+      w.state = "hard";
+    }
+    w.lastSeen = dayStr;
+  }
+  state.car.parts += gained;
+  return { gained: gained };
+}
+
+/** 顺延：默写日过了还没稳的词，挪到下一个默写日；已稳的归档 */
+function sweep(state, now){
+  const today = ymd(now);
+  const next = ymd(nextDictDate(now));
+  let moved = 0;
+  for (const w of state.words){
+    if (w.retired) continue;
+    if (!w.dictDate || w.dictDate >= today) continue;
+    if (w.box >= 3){ w.retired = true; continue; }
+    w.dictDate = next;
+    moved++;
+  }
+  return moved;
+}
+
+function emptyState(){
+  return {
+    version: 2,
+    words: [],
+    car: { parts: 0, lvl: 0, tracks: [] },
+    today: { date: "", phase: "", done: false, startedAt: 0 },
+    sound: true,
+    lastSession: null,
+    createdAt: ""
+  };
+}
+/* ===================== /PURE ===================== */
+</script>
+
+<script>
+/* ===================== 声音（全程序合成，无外部素材） ===================== */
+const SND = {
+  on: true,
+  ctx: null,
+  master: null,
+  init(){
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try{
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.5;
+      this.master.connect(this.ctx.destination);
+    }catch(e){ this.ctx = null; }
+  },
+  resume(){ try{ if (this.ctx && this.ctx.state === "suspended") this.ctx.resume(); }catch(e){} },
+  tone(freq, dur, type, vol, delay, slideTo){
+    if (!this.on || !this.ctx) return;
+    const c = this.ctx, t0 = c.currentTime + (delay || 0);
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || "sine";
+    o.frequency.setValueAtTime(freq, t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+  },
+  noise(dur, vol, freq){
+    if (!this.on || !this.ctx) return;
+    const c = this.ctx, t0 = c.currentTime;
+    const n = Math.max(1, Math.floor(c.sampleRate * dur));
+    const buf = c.createBuffer(1, n, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const bp = c.createBiquadFilter(); bp.type = "bandpass";
+    bp.frequency.value = freq || 1800; bp.Q.value = 0.8;
+    const g = c.createGain(); g.gain.value = vol || 0.12;
+    src.connect(bp); bp.connect(g); g.connect(this.master);
+    src.start(t0);
+  },
+  tap(){ this.tone(760, 0.028, "square", 0.06); },
+  correct(combo){
+    const n = Math.min(combo || 1, 10);
+    const base = 523.25 * Math.pow(2, n / 12);
+    this.tone(base, 0.09, "triangle", 0.24);
+    this.tone(base * 1.5, 0.13, "sine", 0.14, 0.045);
+    this.noise(0.05, 0.05, 2600);
+  },
+  wrong(){
+    this.tone(168, 0.14, "sine", 0.2, 0, 118);
+    this.tone(112, 0.17, "triangle", 0.1, 0.02);
+  },
+  reveal(){
+    this.tone(392, 0.1, "sine", 0.16);
+    this.tone(294, 0.14, "sine", 0.12, 0.09);
+  },
+  finish(){
+    this.tone(78, 0.5, "sawtooth", 0.16, 0, 310);
+    this.noise(0.45, 0.06, 900);
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach(function(f, i){ this.tone(f, 0.22, "triangle", 0.17, 0.35 + i * 0.085); }, this);
+    this.noise(0.25, 0.05, 3200);
+  }
+};
+
+/* ===================== 粒子特效 ===================== */
+const FX = (function(){
+  const cv = document.createElement("canvas");
+  cv.id = "fx";
+  document.body.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  let W = 0, H = 0, parts = [], raf = 0, last = 0, DPR = 1;
+
+  function resize(){
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  function kick(){ if (!raf){ last = 0; raf = requestAnimationFrame(tick); } }
+
+  function tick(t){
+    if (!last) last = t;
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    ctx.clearRect(0, 0, W, H);
+    for (let i = parts.length - 1; i >= 0; i--){
+      const p = parts[i];
+      p.life += dt;
+      if (p.life >= p.ttl){ parts.splice(i, 1); continue; }
+      p.vy += (p.g || 780) * dt;
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      const k = Math.max(0, 1 - p.life / p.ttl);
+      ctx.globalAlpha = k;
+      ctx.fillStyle = p.color;
+      if (p.kind === "c"){
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 7 + p.rot);
+        ctx.fillRect(-3.5, -2.2, 7, 4.4); ctx.restore();
+      } else if (p.kind === "l"){
+        ctx.fillRect(p.x, p.y, p.size * 9, 2);
+      } else {
+        ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.5, p.size * k), 0, 6.284); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    if (parts.length) raf = requestAnimationFrame(tick);
+    else { raf = 0; last = 0; }
+  }
+
+  const COLORS = ["#f5c518", "#ffd85e", "#e5121f", "#ff6b45", "#ffffff"];
+  const CAR_COLORS = ["#f5c518", "#e9eaee", "#e5121f"];
+
+  function burst(cx, cy, n, colors){
+    const cs = colors || COLORS;
+    for (let i = 0; i < n; i++){
+      const a = Math.random() * Math.PI * 2;
+      const sp = 110 + Math.random() * 280;
+      parts.push({
+        kind: "p", x: cx, y: cy,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 70,
+        life: 0, ttl: 0.5 + Math.random() * 0.4,
+        size: 1.6 + Math.random() * 3,
+        color: cs[(Math.random() * cs.length) | 0]
+      });
+    }
+    kick();
+  }
+
+  function splurge(cx, cy){
+    for (let i = 0; i < 10; i++){
+      const a = Math.random() * Math.PI * 2;
+      const sp = 150 + Math.random() * 320;
+      parts.push({
+        kind: "c", x: cx, y: cy,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 150,
+        g: 620, rot: Math.random() * 6.28,
+        life: 0, ttl: 0.8 + Math.random() * 0.5,
+        size: 1, color: CAR_COLORS[(Math.random() * 3) | 0]
+      });
+    }
+    kick();
+  }
+
+  function speedLines(){
+    for (let i = 0; i < 3; i++){
+      parts.push({
+        kind: "l", x: W + 20, y: H * (0.2 + Math.random() * 0.6),
+        vx: -(700 + Math.random() * 500), vy: 0, g: 0,
+        life: 0, ttl: 0.42, size: 0.6 + Math.random() * 0.9,
+        color: "rgba(245,197,24,.5)"
+      });
+    }
+    kick();
+  }
+
+  function confetti(){
+    for (let i = 0; i < 90; i++){
+      parts.push({
+        kind: "c", x: Math.random() * W, y: -20 - Math.random() * H * 0.5,
+        vx: (Math.random() - 0.5) * 120, vy: 40 + Math.random() * 90,
+        g: 180, rot: Math.random() * 6.28,
+        life: 0, ttl: 1.6 + Math.random() * 1.2,
+        size: 1, color: CAR_COLORS[(Math.random() * 3) | 0]
+      });
+    }
+    kick();
+  }
+
+  return { burst: burst, splurge: splurge, speedLines: speedLines, confetti: confetti };
+})();
+
+/* ===================== UI ===================== */
+const $ = function(sel){ return document.querySelector(sel); };
+const app = $("#app");
+const flashEl = $("#flash");
+const toastEl = $("#toast");
+const panelEl = $("#panel");
+const KEY = "ferrari-words-v2";
+
+function storeAvailable(){
+  try{
+    localStorage.setItem("__probe__", "1");
+    localStorage.removeItem("__probe__");
+    return true;
+  }catch(e){ return false; }
+}
+const STORE_OK = storeAvailable();
+
+let state = load();
+let session = null;
+
+const comboEl = document.createElement("div");
+comboEl.className = "combo";
+document.body.appendChild(comboEl);
+const vignEl = document.createElement("div");
+vignEl.className = "vignette";
+document.body.appendChild(vignEl);
+
+/* ---------- 存档 ---------- */
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return emptyState();
+    const s = JSON.parse(raw);
+    if (!s || !Array.isArray(s.words)) return emptyState();
+    const base = emptyState();
+    return Object.assign(base, s, { car: Object.assign(base.car, s.car || {}) });
+  }catch(e){ return emptyState(); }
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+}
+
+/* ---------- 小工具 ---------- */
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("on");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ toastEl.classList.remove("on"); }, 1600);
+}
+function flash(txt, ok){
+  flashEl.textContent = txt;
+  flashEl.style.color = ok ? "var(--yellow)" : "var(--dim)";
+  flashEl.classList.add("on");
+  clearTimeout(flash._t);
+  flash._t = setTimeout(function(){ flashEl.classList.remove("on"); }, 320);
+}
+function speak(text){
+  try{
+    if (!window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US"; u.rate = 0.85;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function shuffle(a){
+  const x = a.slice();
+  for (let i = x.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = x[i]; x[i] = x[j]; x[j] = tmp;
+  }
+  return x;
+}
+function todayStr(){ return ymd(new Date()); }
+function lvlOf(parts){ return Math.min(9, Math.floor(parts / 12)); }
+function bumpCar(){
+  const car = $("#car");
+  if (car){ car.classList.add("hit"); setTimeout(function(){ car.classList.remove("hit"); }, 220); }
+}
+function flyText(txt){
+  const d = document.createElement("div");
+  d.className = "fly";
+  d.textContent = txt;
+  document.body.appendChild(d);
+  setTimeout(function(){ d.remove(); }, 980);
+}
+function showCombo(n){
+  if (n >= 2){ comboEl.textContent = "x" + n; comboEl.classList.add("on"); }
+  else comboEl.classList.remove("on");
+}
+function flashVignette(){
+  vignEl.classList.add("on");
+  setTimeout(function(){ vignEl.classList.remove("on"); }, 130);
+}
+function haptic(ms){
+  try{ if (navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+}
+function shiftSound(){
+  state.sound = (state.sound === false);
+  SND.on = state.sound !== false;
+  SND.init(); SND.resume();
+  save();
+  const b = $("#btn-sound");
+  if (b) b.textContent = state.sound ? "🔊" : "🔇";
+  if (state.sound) SND.tap();
+}
+function soundBtn(){
+  return '<button class="ghost" id="btn-sound">' + (state.sound === false ? "🔇" : "🔊") + "</button>";
+}
+
+/* ---------- 首页 ---------- */
+function renderHome(){
+  sweep(state, new Date());
+  save();
+  showCombo(0);
+
+  const now = new Date();
+  const todays = wordsOn(state, todayStr());
+  const hard = todays.filter(function(w){ return w.state === "hard"; });
+  const evening = buildEveningQueue(state, now);
+  const sortQ = buildSortQueue(state, now);
+  const lvl = lvlOf(state.car.parts);
+
+  const wd = now.getDay();
+  const weekend = (wd === 5 || wd === 6 || wd === 0);
+  let cta, hint, phase = "";
+
+  if (weekend && sortQ.length){
+    phase = "sort";
+    cta = "开始分拣";
+    hint = "新词单到了，先看看哪些已经会了（" + sortQ.length + " 个词）";
+  } else if (hard.length){
+    phase = "morning";
+    cta = "出车";
+    hint = "今天要跑 " + Math.min(8, hard.length) + " 个弯";
+  } else if (evening.list.length){
+    phase = "evening";
+    cta = "调车";
+    hint = dowCN(new Date(evening.target + "T00:00:00")) + "那份，" + evening.list.length + " 个词";
+  } else if (sortQ.length){
+    phase = "sort";
+    cta = "开始分拣";
+    hint = sortQ.length + " 个词还等着分";
+  } else {
+    cta = "今天跑完了";
+    hint = "车在车库停着";
+  }
+
+  app.innerHTML =
+    '<div class="screen">' +
+      '<div class="bar">' +
+        '<span class="stripe"></span><span class="stripe y"></span>' +
+        "<h1>FERRARI 车队</h1>" +
+        '<span class="spacer"></span>' +
+        soundBtn() +
+        '<button class="ghost" id="btn-words">词单</button>' +
+      "</div>" +
+      '<div class="garage">' +
+        '<div class="car" id="car">🏎️</div>' +
+        '<div class="road"></div>' +
+        '<div class="teamname">ROOKIE · ' + (lvl + 1) + " 段</div>" +
+        '<div class="lvl">' + Array.from({ length: 9 }, function(_, i){
+          return '<i class="' + (i < lvl ? "on" : "") + '"></i>';
+        }).join("") + "</div>" +
+        '<div class="parts"><b>' + state.car.parts + "</b><span>零件</span></div>" +
+      "</div>" +
+      '<button class="cta" id="btn-go" ' + (phase ? "" : "disabled") + ">" + cta + "</button>" +
+      '<div class="hint">' + hint + (STORE_OK ? "" : " · 当前不存档，用 http 打开") + "</div>" +
+    "</div>";
+
+  $("#btn-go").onclick = function(){
+    if (phase === "sort") startSession("sort", sortQ, "分拣");
+    else if (phase === "morning") startSession("morning", hard.slice(0, 8), "出车");
+    else if (phase === "evening") startSession("evening", evening.list,
+      "调车 · " + dowCN(new Date(evening.target + "T00:00:00")) + "那份");
+  };
+  $("#btn-words").onclick = openPanel;
+  $("#btn-sound").onclick = shiftSound;
+
+  const car = $("#car");
+  car.addEventListener("dblclick", openPanel);
+  let pressAt = 0;
+  car.addEventListener("touchstart", function(){ pressAt = Date.now(); });
+  car.addEventListener("touchend", function(){ if (Date.now() - pressAt > 800) openPanel(); });
+}
+
+/* ---------- 家长面板 ---------- */
+function openPanel(){
+  const ws = state.words;
+  const byDate = {};
+  for (const w of ws){
+    const d = w.dictDate || "未排";
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(w);
+  }
+  function safeDow(d){
+    const t = new Date(d + "T00:00:00");
+    return isNaN(t.getTime()) ? "" : " · " + dowCN(t);
+  }
+  const rows = Object.keys(byDate).sort().map(function(d){
+    const arr = byDate[d];
+    const ok = arr.filter(function(w){ return w.state === "ok" || w.box >= 3; }).length;
+    return '<div class="kv"><span>' + esc(d) + safeDow(d) + "</span><b>" + ok + "/" + arr.length + "</b></div>";
+  }).join("") || '<div class="kv"><span>还没有词</span><b>0</b></div>';
+
+  const hard = ws.filter(function(w){ return !w.retired && w.state === "hard"; });
+  const hardList = hard.slice(0, 12).map(function(w){
+    return '<div class="kv"><span>' + esc(w.en) + " · " + esc(w.zh) + "</span><b>盒" + w.box + "</b></div>";
+  }).join("");
+
+  const last = state.lastSession;
+  const kindCN = { sort: "分拣", morning: "出车", evening: "调车" };
+  const lastHtml = last
+    ? '<h2>最近一局 · ' + esc(last.date) + " " + esc(kindCN[last.kind] || last.kind) + "</h2>" +
+      last.items.map(function(it){
+        return '<div class="kv"><span>' + esc(it.en) + " · " + esc(it.zh) + "</span><b>" +
+          (it.ok ? "✓" : "—") + "</b></div>";
+      }).join("") +
+      '<div style="color:var(--dim);font-size:12px;margin-top:6px;line-height:1.6">' +
+      "✓ 一次就对，— 当次没写出来。拿去对默写单，看练过的词是不是真的默出来了。</div>"
+    : "";
+
+  panelEl.innerHTML =
+    '<div class="row"><h2 style="flex:1;margin:0">车队数据（只给家长看）</h2>' +
+      '<button class="ghost" id="panel-x">关闭</button></div>' +
+    "<h2>总览</h2>" +
+    '<div class="kv"><span>词总数</span><b>' + ws.length + "</b></div>" +
+    '<div class="kv"><span>已归档</span><b>' +
+      ws.filter(function(w){ return w.retired; }).length + "</b></div>" +
+    '<div class="kv"><span>零件</span><b>' + state.car.parts + "</b></div>" +
+    '<div class="kv"><span>还没稳的词</span><b>' + hard.length + "</b></div>" +
+    "<h2>按默写日</h2>" + rows +
+    "<h2>还没稳的词</h2>" + (hardList || '<div class="kv"><span>没有</span><b>—</b></div>') +
+    lastHtml +
+    "<h2>数据管理</h2>" +
+    '<div class="row" style="margin-top:6px">' +
+      '<button class="ghost" id="panel-export">导出</button>' +
+      '<button class="ghost" id="panel-reset">清空重来</button>' +
+    "</div>";
+
+  panelEl.classList.add("on");
+  $("#panel-x").onclick = function(){ panelEl.classList.remove("on"); };
+  $("#panel-export").onclick = function(){
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "ferrari-words-" + todayStr() + ".json";
+    a.click();
+  };
+  $("#panel-reset").onclick = function(){
+    if (confirm("清空所有词和进度？不可恢复。")){
+      state = emptyState();
+      SND.on = true;
+      save();
+      panelEl.classList.remove("on");
+      renderHome();
+    }
+  };
+}
+
+/* ---------- 词单导入 ---------- */
+function renderImport(){
+  app.innerHTML =
+    '<div class="screen">' +
+      '<div class="bar">' +
+        '<span class="stripe"></span><span class="stripe y"></span>' +
+        '<h1>词单入库</h1><span class="spacer"></span>' +
+        '<button class="ghost" id="imp-back">返回</button>' +
+      "</div>" +
+      '<div class="pad" style="display:flex;flex-direction:column;flex:1;min-height:0">' +
+        '<textarea id="imp-text" placeholder="每行一个词，例如：&#10;tiger 虎&#10;safari park 野生动物园&#10;1. whale 鲸&#10;&#10;想指定周几就在上面加一行：&#10;# 周一"></textarea>' +
+        '<button class="cta" id="imp-parse" style="margin:12px 0 0;padding:14px;font-size:15px">解析</button>' +
+        '<div class="preview" id="imp-preview" style="display:none"></div>' +
+        '<button class="cta" id="imp-save" style="display:none;margin:12px 0 0">入库</button>' +
+      "</div>" +
+    "</div>";
+
+  $("#imp-back").onclick = renderHome;
+  let parsed = null;
+
+  $("#imp-parse").onclick = function(){
+    const text = $("#imp-text").value;
+    const r = parseWords(text);
+    if (!r.items.length){ toast("没解析出词，检查格式"); return; }
+    parsed = assignDates(r.items, new Date());
+
+    const box = $("#imp-preview");
+    box.style.display = "block";
+    box.innerHTML = parsed.map(function(w){
+      return '<div class="prow"><span class="en">' + esc(w.en) + "</span>" +
+        '<span class="zh">' + esc(w.zh) + "</span>" +
+        '<span class="d">' + esc(dowCN(new Date(w.dictDate + "T00:00:00"))) + "</span></div>";
+    }).join("") +
+    (r.failed.length
+      ? '<div class="sect">解析失败 ' + r.failed.length + " 行</div>" +
+        r.failed.map(function(f){
+          return '<div class="prow bad"><span class="en">' + esc(f) + "</span></div>";
+        }).join("")
+      : "");
+
+    const s = $("#imp-save");
+    s.style.display = "block";
+    s.textContent = "入库 " + parsed.length + " 个词";
+  };
+
+  $("#imp-save").onclick = function(){
+    if (!parsed || !parsed.length) return;
+    const stamp = Date.now().toString(36);
+    const added = parsed.map(function(w, i){
+      return {
+        id: "w_" + stamp + "_" + i,
+        en: w.en, zh: w.zh, ipa: w.ipa || "", unit: w.unit || "",
+        box: 1, sorted: false, state: "hard",
+        dictDate: w.dictDate, lastSeen: "", retired: false
+      };
+    });
+    state.words = state.words.concat(added);
+    save();
+    toast("入库 " + added.length + " 个词");
+    renderHome();
+  };
+}
+
+/* ---------- 一局 ---------- */
+function startSession(kind, list, label){
+  if (!list || !list.length){ toast("这一局没有词"); return; }
+  const cur = {
+    kind: kind, label: label,
+    queue: list.slice(),
+    i: 0,
+    results: [],
+    tries: {},
+    easy: {},
+    combo: 0,
+    capMs: 12 * 60 * 1000,
+    timer: null
+  };
+  session = cur;
+  state.today = { date: todayStr(), phase: kind, done: false, startedAt: Date.now() };
+  showCombo(0);
+
+  cur.timer = setInterval(function(){
+    if (session !== cur) return;
+    if (Date.now() - state.today.startedAt > cur.capMs) endSession();
+  }, 1500);
+
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const s = session;
+  if (!s) return;
+  if (Date.now() - state.today.startedAt > s.capMs){ endSession(); return; }
+  if (s.i >= s.queue.length){ endSession(); return; }
+
+  const w = s.queue[s.i];
+  const isSort = s.kind === "sort";
+  const layer = isSort ? "choice" : (s.easy[w.id] ? "cued" : layerFor(w));
+  const pct = Math.round((s.i / s.queue.length) * 100);
+
+  const head =
+    '<div class="bar">' +
+      '<span class="stripe"></span><span class="stripe y"></span>' +
+      "<h1>" + esc(s.label) + '</h1><span class="spacer"></span>' +
+      soundBtn() +
+      '<button class="ghost" id="q-quit">收工</button>' +
+    "</div>";
+
+  const prog =
+    '<div class="qtop"><div class="prog" id="prog"><i style="width:' + pct + '%"></i></div>' +
+    '<span class="n">' + (s.i + 1) + "/" + s.queue.length + "</span></div>";
+
+  if (isSort){
+    const others = shuffle(s.queue.filter(function(x){
+      return x.id !== w.id && x.en !== w.en;
+    })).slice(0, 2);
+    const opts = shuffle([w].concat(others));
+    app.innerHTML =
+      '<div class="screen">' + head +
+        '<div class="qwrap">' + prog +
+          '<div class="prompt">' + esc(w.zh) + "</div>" +
+          '<div class="opts">' + opts.map(function(o){
+            return '<button class="opt" data-id="' + esc(o.id) + '">' + esc(o.en) + "</button>";
+          }).join("") + "</div>" +
+        "</div>" +
+      "</div>";
+
+    Array.prototype.forEach.call(app.querySelectorAll(".opt"), function(btn){
+      btn.onclick = function(){
+        SND.init(); SND.resume(); SND.tap();
+        const picked = opts.filter(function(o){ return o.id === btn.dataset.id; })[0];
+        const ok = !!(picked && picked.id === w.id);
+        btn.classList.add(ok ? "good" : "bad");
+        if (!ok){
+          const right = Array.prototype.slice.call(app.querySelectorAll(".opt"))
+            .filter(function(b){ return b.dataset.id === w.id; })[0];
+          if (right) right.classList.add("good");
+        }
+        setTimeout(function(){ answer(w, ok, "choice"); }, ok ? 110 : 460);
+      };
+    });
+    $("#q-quit").onclick = endSession;
+    $("#btn-sound").onclick = shiftSound;
+    return;
+  }
+
+  const slots = slotsFor(w.en, layer);
+  const slotHtml = slots.map(function(sl){
+    if (sl.ch === "gap") return '<span class="gap"></span>';
+    return "<span>" + (sl.show ? esc(sl.ch) : "") + "</span>";
+  }).join("");
+
+  const meta = [w.ipa, w.unit].filter(Boolean).join(" ");
+
+  app.innerHTML =
+    '<div class="screen">' + head +
+      '<div class="qwrap">' + prog +
+        '<div class="prompt">' + esc(w.zh) +
+          (meta ? "<small>" + esc(meta) + "</small>" : "") + "</div>" +
+        '<div class="slots" id="slots">' + slotHtml + "</div>" +
+        '<input id="ans" type="text" inputmode="latin" autocapitalize="none" ' +
+          'autocomplete="off" spellcheck="false" placeholder="写英文" />' +
+        '<div class="row" style="justify-content:center;gap:12px">' +
+          '<button class="speak" id="q-speak">🔊 听一下</button>' +
+          '<button class="speak" id="q-ok" ' +
+            'style="background:var(--red);border-color:var(--red);color:#fff;font-weight:700">确定</button>' +
+        "</div>" +
+      "</div>" +
+    "</div>";
+
+  const ans = $("#ans");
+  const sp = app.querySelectorAll("#slots span");
+
+  ans.oninput = function(){
+    const v = ans.value.toLowerCase();
+    slots.forEach(function(sl, idx){
+      if (!sp[idx] || sl.ch === "gap") return;
+      if (idx === 0 && sl.show){ sp[idx].textContent = w.en[0]; return; }
+      const typed = v[idx];
+      sp[idx].textContent = typed || "";
+      sp[idx].style.color = typed
+        ? (typed === w.en[idx] ? "var(--txt)" : "var(--red)")
+        : "var(--yellow)";
+    });
+  };
+  ans.onkeydown = function(e){ if (e.key === "Enter") submit(); };
+  $("#q-speak").onclick = function(){ SND.init(); SND.resume(); speak(w.en); };
+  $("#q-ok").onclick = submit;
+  $("#q-quit").onclick = endSession;
+  $("#btn-sound").onclick = shiftSound;
+
+  function submit(){
+    SND.init(); SND.resume();
+    const val = ans.value;
+    if (!normalize(val)) return;
+    answer(w, isCorrect(val, w, layer), layer);
+  }
+  app._submit = submit;
+
+  setTimeout(function(){ try{ ans.focus(); }catch(e){} }, 30);
+}
+
+function answer(word, ok, layer){
+  const s = session;
+  if (!s) return;
+  let rec = s.results.filter(function(r){ return r.id === word.id; })[0];
+
+  if (ok){
+    const first = !rec;
+    if (rec) rec.firstTry = false;
+    else s.results.push({ id: word.id, firstTry: true });
+
+    s.combo = first ? s.combo + 1 : 0;
+    SND.correct(Math.max(1, s.combo));
+    FX.burst(window.innerWidth / 2, window.innerHeight * 0.42, first ? 22 : 12);
+    if (first && s.kind !== "sort"){
+      FX.splurge(window.innerWidth / 2, window.innerHeight * 0.44);
+      flyText("零件 +1");
+    }
+    if (s.combo >= 5) FX.speedLines();
+    showCombo(s.combo);
+    const prog = $("#prog");
+    if (prog) prog.style.boxShadow = s.combo >= 3 ? "0 0 14px rgba(245,197,24,.55)" : "none";
+    haptic(12);
+
+    flash("✓", true);
+    bumpCar();
+    s.i++;
+    app._submit = null;
+    setTimeout(renderQuestion, 250);
+    return;
+  }
+
+  if (!rec) s.results.push({ id: word.id, firstTry: false });
+  s.combo = 0;
+  showCombo(0);
+  SND.wrong();
+  flashVignette();
+  haptic(20);
+  bumpCar();
+
+  if (s.kind === "sort"){
+    flash("·", false);
+    s.i++;
+    app._submit = null;
+    setTimeout(renderQuestion, 430);
+    return;
+  }
+
+  s.tries[word.id] = (s.tries[word.id] || 0) + 1;
+
+  if (s.tries[word.id] >= 3){
+    SND.reveal();
+    flash(word.en, true);
+    toast(word.en + " · " + word.zh);
+    s.i++;
+    app._submit = null;
+    setTimeout(renderQuestion, 1000);
+    return;
+  }
+  if (s.tries[word.id] >= 2) s.easy[word.id] = true;
+  flash("·", false);
+  setTimeout(renderQuestion, 120);
+}
+
+function endSession(){
+  const s = session;
+  if (!s) return;
+  clearInterval(s.timer);
+  session = null;
+  showCombo(0);
+
+  const day = todayStr();
+  const wasFull = s.i >= s.queue.length;
+
+  if (s.kind === "sort"){
+    for (const r of s.results){
+      const w = state.words.filter(function(x){ return x.id === r.id; })[0];
+      if (w) w.sorted = true;
+    }
+    state.car.parts += Math.floor(s.results.length / 4);
+  } else {
+    applySession(state, s.results, day);
+  }
+  state.today.done = true;
+  state.lastSession = {
+    date: day,
+    kind: s.kind,
+    items: s.results.map(function(r){
+      const w = state.words.filter(function(x){ return x.id === r.id; })[0];
+      return { en: w ? w.en : "", zh: w ? w.zh : "", ok: !!r.firstTry };
+    })
+  };
+  save();
+
+  if (wasFull){
+    SND.finish();
+    FX.confetti();
+  }
+
+  const gained = s.kind === "sort"
+    ? Math.floor(s.results.length / 4)
+    : s.results.filter(function(r){ return r.firstTry; }).length;
+  const lvl = lvlOf(state.car.parts);
+  const kindWord = s.kind === "sort" ? "分好了"
+    : (s.kind === "morning" ? "出车完成" : "车调好了");
+
+  app.innerHTML =
+    '<div class="screen">' +
+      '<div class="bar">' +
+        '<span class="stripe"></span><span class="stripe y"></span>' +
+        '<h1>FERRARI 车队</h1><span class="spacer"></span>' +
+        soundBtn() +
+      "</div>" +
+      '<div class="finish">' +
+        '<div class="car' + (wasFull ? " run" : "") + '" id="car">🏎️</div>' +
+        '<div class="checker" style="margin:12px 0 6px"></div>' +
+        '<div class="big">' + kindWord + "</div>" +
+        '<div class="sub">' + (gained
+          ? '车上多了 <b style="color:var(--yellow)">' + gained + "</b> 个零件"
+          : "车在跑") + "</div>" +
+        '<div class="lvl" style="margin-top:14px">' + Array.from({ length: 9 }, function(_, i){
+          return '<i class="' + (i < lvl ? "on" : "") + '"></i>';
+        }).join("") + "</div>" +
+        '<div class="sub" style="margin-top:10px;color:var(--dim)">' +
+          (lvl + 1) + " 段车队 · 共 " + state.car.parts + " 个零件</div>" +
+      "</div>" +
+      '<button class="cta alt" id="fin-back">回车库</button>' +
+      '<div class="hint">' + (wasFull ? "今天的跑完了" : "") + "</div>" +
+    "</div>";
+
+  $("#fin-back").onclick = function(){ SND.tap(); renderHome(); };
+  $("#btn-sound").onclick = shiftSound;
+}
+
+/* ---------- 演示词 ---------- */
+const DEMO_LINES = [
+  "tiger 虎", "safari park 野生动物园", "lion 狮子", "whale 鲸",
+  "panda 熊猫", "monkey 猴子", "elephant 大象", "giraffe 长颈鹿",
+  "zebra 斑马", "kangaroo 袋鼠", "crocodile 鳄鱼", "snake 蛇",
+  "dolphin 海豚", "penguin 企鹅", "camel 骆驼", "fox 狐狸",
+  "rabbit 兔子", "squirrel 松鼠", "butterfly 蝴蝶", "tortoise 乌龟"
+];
+
+function seedDemo(){
+  const r = parseWords(DEMO_LINES.join("\n"));
+  const dated = assignDates(r.items, new Date());
+  state = emptyState();
+  state.words = dated.map(function(w, i){
+    return {
+      id: "demo_" + i,
+      en: w.en, zh: w.zh, ipa: w.ipa || "", unit: "5AU4",
+      box: 1, sorted: false, state: "hard",
+      dictDate: w.dictDate, lastSeen: "", retired: false
+    };
+  });
+  state.car.parts = 6;
+  save();
+}
+
+/* ---------- 截图 / 调试入口 ---------- */
+function runShot(shot){
+  const now = new Date();
+  if (shot === "import"){ renderImport(); return; }
+  if (shot === "panel"){ openPanel(); return; }
+
+  if (shot === "morning" || shot === "typing"){
+    const today = todayStr();
+    state.words.slice(0, 4).forEach(function(w){
+      w.dictDate = today; w.state = "hard"; w.box = 1;
+    });
+    save();
+    startSession("morning", state.words.slice(0, shot === "typing" ? 2 : 4), "出车");
+    if (shot === "typing"){
+      const a = $("#ans");
+      if (a){
+        a.value = "tige";
+        a.dispatchEvent(new Event("input"));
+        a.blur();
+      }
+    }
+    return;
+  }
+
+  if (shot === "evening"){
+    const today = todayStr();
+    const dates = state.words
+      .filter(function(w){ return w.dictDate && w.dictDate > today; })
+      .map(function(w){ return w.dictDate; })
+      .filter(function(v, i, arr){ return arr.indexOf(v) === i; })
+      .sort();
+    if (!dates.length){ toast("没有未来的词"); return; }
+    const target = dates[0];
+    startSession("evening", wordsOn(state, target).slice(0, 5),
+      "调车 · " + dowCN(new Date(target + "T00:00:00")) + "那份");
+    return;
+  }
+
+  if (shot === "sort"){
+    startSession("sort", buildSortQueue(state, now).slice(0, 5), "分拣");
+    return;
+  }
+
+  if (shot === "done"){
+    startSession("morning", state.words.slice(0, 3), "出车");
+    session.results = [{ id: session.queue[0].id, firstTry: true }];
+    session.i = session.queue.length;
+    endSession();
+    return;
+  }
+}
+
+/* ---------- 启动 ---------- */
+(function boot(){
+  SND.on = state.sound !== false;
+  const q = new URLSearchParams(location.search);
+  if (q.get("demo") === "1" && !state.words.length) seedDemo();
+
+  window.__GAME__ = {
+    get state(){ return state; },
+    get session(){ return session; },
+    renderHome: renderHome,
+    renderImport: renderImport,
+    startSession: startSession,
+    seedDemo: seedDemo
+  };
+
+  renderHome();
+  const shot = q.get("shot");
+  if (shot) runShot(shot);
+})();
+
+document.addEventListener("pointerdown", function(){
+  SND.init(); SND.resume();
+}, { once: true });
+
+document.addEventListener("keydown", function(e){
+  if (e.key === "Enter" && app._submit){ app._submit(); }
+});
+</script>
+</body>
+</html>
