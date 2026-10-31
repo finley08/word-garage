@@ -131,6 +131,16 @@
     font-size:22px;font-weight:700;color:var(--yellow);transition:border-color .2s
   }
   .slots span.gap{border-bottom:0}
+  .sentence{
+    font-size:21px;line-height:1.85;text-align:center;letter-spacing:.01em;
+    padding:16px 14px;border-radius:14px;background:rgba(255,255,255,.045);
+    border:1px solid var(--line);word-break:break-word;
+  }
+  .sentence .blank{
+    font-style:normal;color:var(--yellow);font-weight:800;
+    border-bottom:2px solid var(--yellow);padding:0 2px;
+  }
+  .sentzh{text-align:center;color:var(--dim);font-size:14px;line-height:1.7}
   #ans{
     width:100%;text-align:center;font-size:23px;font-weight:700;letter-spacing:.12em;
     background:var(--ink2);border:1px solid var(--line);border-radius:14px;padding:15px;color:var(--txt);
@@ -271,20 +281,29 @@ function parseLine(raw){
   let en = line.slice(0, ci).replace(/[,;:、\s]+$/, "").trim();
   let zh = line.slice(ci).replace(/^[\s,;:、]+/, "").trim();
   if (!en) return null;
-  if (!/^[A-Za-z][A-Za-z' -]*$/.test(en)) return null;
+  if (!/^[A-Za-z][A-Za-z' .-]*$/.test(en)) return null;
 
-  en = en.replace(/\s+/g, " ").toLowerCase();
+  en = en.replace(/\s+/g, " ").toLowerCase().replace(/\.+$/, "");
   zh = zh.replace(/\s+/g, " ");
   return { en, zh, ipa, unit };
 }
 
-/** 解析整段文本。以 # 或 【 开头的行算当天分隔，例如 "# 周一" */
+/** 解析整段文本。以 # 或 【 开头算当天分隔（如 "# 周一"）；以 [句] 开头算句子 */
 function parseWords(text){
   const items = [], failed = [];
   const lines = String(text || "").split(/\r?\n/);
   for (const raw of lines){
     const line = raw.trim();
     if (!line) continue;
+    if (/^\[句\]/.test(line)){
+      const body = line.replace(/^\[句\]\s*/, "");
+      const cut = body.indexOf("|");
+      const en = (cut >= 0 ? body.slice(0, cut) : body).trim();
+      const zh = cut >= 0 ? body.slice(cut + 1).trim() : "";
+      if (en){ items.push({ __sent: true, en, zh }); }
+      else failed.push(raw);
+      continue;
+    }
     if (/^(#|＃|【|\[)/.test(line)){
       items.push({ __day: true, label: line.replace(/^[#＃【\[]+/, "").replace(/[】\]]+$/, "").trim() });
       continue;
@@ -352,6 +371,60 @@ function buildSortQueue(state, now){
   });
 }
 
+/* ---------- 句子（补句） ---------- */
+
+function sentsOn(state, dateStr){
+  const sents = state.sentences || [];
+  return sents.filter(function(s){ return !s.retired && s.dictDate === dateStr; });
+}
+
+/** 早上：今天那份里最多 1 句 */
+function morningSentences(state, now){
+  return sentsOn(state, ymd(now)).slice(0, 1);
+}
+
+/** 晚上：明天那份里最多 2 句 */
+function eveningSentences(state, now){
+  const target = nextDictDate(now);
+  return sentsOn(state, ymd(target)).slice(0, 2);
+}
+
+/** 挑一个词挖空：优先词库里已学的，其次最长；不挖第一个词 */
+function pickBlank(sentence, known){
+  const tokens = String(sentence.en || "").split(/\s+/);
+  const cands = [];
+  tokens.forEach(function(t, i){
+    const clean = t.replace(/[^A-Za-z']/g, "").toLowerCase();
+    if (i === 0 || clean.length < 3) return;
+    cands.push({ i: i, clean: clean, known: !!(known && known[clean]) });
+  });
+  if (!cands.length) return null;
+  const inBank = cands.filter(function(c){ return c.known; });
+  const pool = inBank.length ? inBank : cands;
+  pool.sort(function(a, b){ return b.clean.length - a.clean.length; });
+  return pool[0];
+}
+
+/** 把句子渲染成带空的那一行：空处给首字母 + 下划线，保留标点 */
+function maskSentence(sentence, blank){
+  const tokens = String(sentence.en || "").split(/\s+/);
+  return tokens.map(function(t, i){
+    if (!blank || i !== blank.i) return esc(t);
+    const letters = t.replace(/[^A-Za-z']/g, "");
+    const at = t.indexOf(letters);
+    const head = at > 0 ? t.slice(0, at) : "";
+    const tail = at >= 0 ? t.slice(at + letters.length) : "";
+    const lead = blank.clean.charAt(0);
+    const rest = Math.max(0, blank.clean.length - 1);
+    return esc(head) + '<em class="blank">' + esc(lead) +
+      new Array(rest + 1).join("_") + "</em>" + esc(tail);
+  }).join(" ");
+}
+
+function sentenceCorrect(answer, blank){
+  return normalize(answer) === normalize(blank.clean);
+}
+
 /** 题型：盒 1 给首字母，盒 2/3 全拼 */
 function layerFor(word){
   return word.box <= 1 ? "cued" : "full";
@@ -366,6 +439,13 @@ function slotsFor(en, layer){
   });
 }
 
+/** HTML 转义 */
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
 function normalize(s){
   return String(s || "").toLowerCase().replace(/[^a-z' ]/g, "").replace(/\s+/g, " ").trim();
 }
@@ -376,11 +456,12 @@ function isCorrect(answer, word, layer){
   return a === t;
 }
 
-/** 结算一局：写回盒与状态 */
+/** 结算一局：写回盒与状态（词与句子都按同一套盒子走） */
 function applySession(state, results, dayStr){
   let gained = 0;
   for (const r of results){
-    const w = state.words.filter(function(x){ return x.id === r.id; })[0];
+    const pool = r.sent ? (state.sentences || []) : state.words;
+    const w = pool.filter(function(x){ return x.id === r.id; })[0];
     if (!w) continue;
     if (r.firstTry){
       w.box = Math.min(3, w.box + 1);
@@ -396,25 +477,29 @@ function applySession(state, results, dayStr){
   return { gained: gained };
 }
 
-/** 顺延：默写日过了还没稳的词，挪到下一个默写日；已稳的归档 */
+/** 顺延：默写日过了还没稳的词/句，挪到下一个默写日；已稳的归档 */
 function sweep(state, now){
   const today = ymd(now);
   const next = ymd(nextDictDate(now));
   let moved = 0;
-  for (const w of state.words){
-    if (w.retired) continue;
-    if (!w.dictDate || w.dictDate >= today) continue;
-    if (w.box >= 3){ w.retired = true; continue; }
-    w.dictDate = next;
-    moved++;
+  const pools = [state.words, state.sentences || []];
+  for (const pool of pools){
+    for (const w of pool){
+      if (w.retired) continue;
+      if (!w.dictDate || w.dictDate >= today) continue;
+      if (w.box >= 3){ w.retired = true; continue; }
+      w.dictDate = next;
+      moved++;
+    }
   }
   return moved;
 }
 
 function emptyState(){
   return {
-    version: 2,
+    version: 3,
     words: [],
+    sentences: [],
     car: { parts: 0, lvl: 0, tracks: [] },
     today: { date: "", phase: "", done: false, startedAt: 0 },
     sound: true,
@@ -651,7 +736,9 @@ function load(){
     const s = JSON.parse(raw);
     if (!s || !Array.isArray(s.words)) return emptyState();
     const base = emptyState();
-    return Object.assign(base, s, { car: Object.assign(base.car, s.car || {}) });
+    const merged = Object.assign(base, s, { car: Object.assign(base.car, s.car || {}) });
+    if (!Array.isArray(merged.sentences)) merged.sentences = [];
+    return merged;
   }catch(e){ return emptyState(); }
 }
 function save(){
@@ -659,11 +746,6 @@ function save(){
 }
 
 /* ---------- 小工具 ---------- */
-function esc(s){
-  return String(s).replace(/[&<>"']/g, function(c){
-    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-  });
-}
 function toast(msg){
   toastEl.textContent = msg;
   toastEl.classList.add("on");
@@ -742,11 +824,13 @@ function renderHome(){
   const hard = todays.filter(function(w){ return w.state === "hard"; });
   const evening = buildEveningQueue(state, now);
   const sortQ = buildSortQueue(state, now);
+  const mSents = morningSentences(state, now);
+  const eSents = eveningSentences(state, now);
   const lvl = lvlOf(state.car.parts);
 
   const wd = now.getDay();
   const weekend = (wd === 5 || wd === 6 || wd === 0);
-  const empty = state.words.length === 0;
+  const empty = state.words.length === 0 && (state.sentences || []).length === 0;
   let cta, hint, phase = "";
 
   if (empty){
@@ -757,14 +841,16 @@ function renderHome(){
     phase = "sort";
     cta = "看一圈";
     hint = "新词单到了，先认一圈（" + sortQ.length + " 个词）";
-  } else if (hard.length){
+  } else if (hard.length || mSents.length){
     phase = "morning";
     cta = "去摘香蕉";
-    hint = "今天要摘 " + Math.min(8, hard.length) + " 根";
-  } else if (evening.list.length){
+    hint = "今天要摘 " + Math.min(8, hard.length) + " 根" +
+      (mSents.length ? " + " + mSents.length + " 句" : "");
+  } else if (evening.list.length || eSents.length){
     phase = "evening";
     cta = "练一练";
-    hint = dowCN(new Date(evening.target + "T00:00:00")) + "那份，" + evening.list.length + " 个词";
+    hint = dowCN(new Date(evening.target + "T00:00:00")) + "那份，" +
+      evening.list.length + " 个词" + (eSents.length ? " + " + eSents.length + " 句" : "");
   } else if (sortQ.length){
     phase = "sort";
     cta = "看一圈";
@@ -809,8 +895,10 @@ function renderHome(){
   $("#btn-go").onclick = function(){
     if (phase === "import") renderImport();
     else if (phase === "sort") startSession("sort", sortQ, "认一圈");
-    else if (phase === "morning") startSession("morning", hard.slice(0, 8), "去摘香蕉");
-    else if (phase === "evening") startSession("evening", evening.list,
+    else if (phase === "morning") startSession("morning",
+      hard.slice(0, 8).concat(mSents), "去摘香蕉");
+    else if (phase === "evening") startSession("evening",
+      evening.list.concat(eSents),
       "练一练 · " + dowCN(new Date(evening.target + "T00:00:00")) + "那份");
   };
   const demoBtn = $("#btn-demo");
@@ -866,6 +954,7 @@ function openPanel(){
       '<button class="ghost" id="panel-x">关闭</button></div>' +
     "<h2>总览</h2>" +
     '<div class="kv"><span>词总数</span><b>' + ws.length + "</b></div>" +
+    '<div class="kv"><span>句子</span><b>' + (state.sentences || []).length + "</b></div>" +
     '<div class="kv"><span>已归档</span><b>' +
       ws.filter(function(w){ return w.retired; }).length + "</b></div>" +
     '<div class="kv"><span>香蕉</span><b>' + state.car.parts + "</b></div>" +
@@ -928,7 +1017,8 @@ function renderImport(){
     const box = $("#imp-preview");
     box.style.display = "block";
     box.innerHTML = parsed.map(function(w){
-      return '<div class="prow"><span class="en">' + esc(w.en) + "</span>" +
+      const tag = w.__sent ? ' <span style="color:var(--leaf)">句</span>' : "";
+      return '<div class="prow"><span class="en">' + esc(w.en) + tag + "</span>" +
         '<span class="zh">' + esc(w.zh) + "</span>" +
         '<span class="d">' + esc(dowCN(new Date(w.dictDate + "T00:00:00"))) + "</span></div>";
     }).join("") +
@@ -941,23 +1031,36 @@ function renderImport(){
 
     const s = $("#imp-save");
     s.style.display = "block";
-    s.textContent = "入库 " + parsed.length + " 个词";
+    const nw = parsed.filter(function(x){ return !x.__sent; }).length;
+    const ns = parsed.filter(function(x){ return x.__sent; }).length;
+    s.textContent = "入库 " + nw + " 个词" + (ns ? " + " + ns + " 句" : "");
   };
 
   $("#imp-save").onclick = function(){
     if (!parsed || !parsed.length) return;
     const stamp = Date.now().toString(36);
-    const added = parsed.map(function(w, i){
-      return {
-        id: "w_" + stamp + "_" + i,
-        en: w.en, zh: w.zh, ipa: w.ipa || "", unit: w.unit || "",
-        box: 1, sorted: false, state: "hard",
-        dictDate: w.dictDate, lastSeen: "", retired: false
-      };
+    const words = [], sents = [];
+    parsed.forEach(function(w, i){
+      if (w.__sent){
+        sents.push({
+          id: "s_" + stamp + "_" + i,
+          en: w.en, zh: w.zh,
+          box: 1, state: "hard",
+          dictDate: w.dictDate, lastSeen: "", retired: false
+        });
+      } else {
+        words.push({
+          id: "w_" + stamp + "_" + i,
+          en: w.en, zh: w.zh, ipa: w.ipa || "", unit: w.unit || "",
+          box: 1, sorted: false, state: "hard",
+          dictDate: w.dictDate, lastSeen: "", retired: false
+        });
+      }
     });
-    state.words = state.words.concat(added);
+    state.words = state.words.concat(words);
+    state.sentences = (state.sentences || []).concat(sents);
     save();
-    toast("入库 " + added.length + " 个词");
+    toast("入库 " + words.length + " 个词" + (sents.length ? "、" + sents.length + " 句" : ""));
     renderHome();
   };
 }
@@ -965,9 +1068,24 @@ function renderImport(){
 /* ---------- 一局 ---------- */
 function startSession(kind, list, label){
   if (!list || !list.length){ toast("这一局没有词"); return; }
+
+  const sentIds = {};
+  (state.sentences || []).forEach(function(s){ sentIds[s.id] = true; });
+  const known = {};
+  state.words.forEach(function(w){ known[normalize(w.en)] = true; });
+
+  const blanks = {};
+  const queue = list.map(function(x){
+    if (!sentIds[x.id]) return x;
+    const item = Object.assign({}, x, { __sent: true });
+    blanks[x.id] = pickBlank(item, known);
+    return item;
+  });
+
   const cur = {
     kind: kind, label: label,
-    queue: list.slice(),
+    queue: queue,
+    blanks: blanks,
     i: 0,
     results: [],
     tries: {},
@@ -1010,6 +1128,44 @@ function renderQuestion(){
   const prog =
     '<div class="qtop"><div class="prog" id="prog"><i style="width:' + pct + '%"></i></div>' +
     '<span class="n">' + (s.i + 1) + "/" + s.queue.length + "</span></div>";
+
+  /* ---- 句子：补句 ---- */
+  if (w.__sent){
+    const blank = s.blanks[w.id];
+    const body = blank ? maskSentence(w, blank) : maskSentence(w, null);
+    app.innerHTML =
+      '<div class="screen">' + head +
+        '<div class="qwrap">' + prog +
+          '<div class="sentence">' + body + "</div>" +
+          '<div class="sentzh">' + esc(w.zh || "") + "</div>" +
+          '<input id="ans" type="text" inputmode="latin" autocapitalize="none" ' +
+            'autocomplete="off" spellcheck="false" placeholder="补上缺的那个词" />' +
+          '<div class="row" style="justify-content:center;gap:12px">' +
+            '<button class="speak" id="q-speak">🔊 听整句</button>' +
+            '<button class="speak" id="q-ok" ' +
+              'style="background:var(--red);border-color:var(--red);color:#fff;font-weight:700">确定</button>' +
+          "</div>" +
+        "</div>" +
+      "</div>";
+
+    const ans = $("#ans");
+    ans.oninput = function(){ ans.style.borderColor = "var(--line)"; };
+    ans.onkeydown = function(e){ if (e.key === "Enter") submit(); };
+    $("#q-speak").onclick = function(){ SND.init(); SND.resume(); speak(w.en); };
+    $("#q-ok").onclick = submit;
+    $("#q-quit").onclick = endSession;
+    $("#btn-sound").onclick = shiftSound;
+
+    function submit(){
+      SND.init(); SND.resume();
+      const val = ans.value;
+      if (!normalize(val)) return;
+      answer(w, !!(blank && sentenceCorrect(val, blank)), "sent");
+    }
+    app._submit = submit;
+    setTimeout(function(){ try{ ans.focus(); }catch(e){} }, 30);
+    return;
+  }
 
   if (isSort){
     const others = shuffle(s.queue.filter(function(x){
@@ -1109,7 +1265,7 @@ function answer(word, ok, layer){
   if (ok){
     const first = !rec;
     if (rec) rec.firstTry = false;
-    else s.results.push({ id: word.id, firstTry: true });
+    else s.results.push({ id: word.id, firstTry: true, sent: !!word.__sent });
 
     s.combo = first ? s.combo + 1 : 0;
     SND.correct(Math.max(1, s.combo));
@@ -1132,7 +1288,7 @@ function answer(word, ok, layer){
     return;
   }
 
-  if (!rec) s.results.push({ id: word.id, firstTry: false });
+  if (!rec) s.results.push({ id: word.id, firstTry: false, sent: !!word.__sent });
   s.combo = 0;
   showCombo(0);
   SND.wrong();
@@ -1188,7 +1344,8 @@ function endSession(){
     date: day,
     kind: s.kind,
     items: s.results.map(function(r){
-      const w = state.words.filter(function(x){ return x.id === r.id; })[0];
+      const pool = r.sent ? (state.sentences || []) : state.words;
+      const w = pool.filter(function(x){ return x.id === r.id; })[0];
       return { en: w ? w.en : "", zh: w ? w.zh : "", ok: !!r.firstTry };
     })
   };
@@ -1240,18 +1397,28 @@ const DEMO_LINES = [
   "panda 熊猫", "monkey 猴子", "elephant 大象", "giraffe 长颈鹿",
   "zebra 斑马", "kangaroo 袋鼠", "crocodile 鳄鱼", "snake 蛇",
   "dolphin 海豚", "penguin 企鹅", "camel 骆驼", "fox 狐狸",
-  "rabbit 兔子", "squirrel 松鼠", "butterfly 蝴蝶", "tortoise 乌龟"
+  "rabbit 兔子", "squirrel 松鼠", "butterfly 蝴蝶", "tortoise 乌龟",
+  "[句] The monkey is eating a banana. | 猴子正在吃香蕉。",
+  "[句] Where does the tiger live? | 老虎住在哪里？"
 ];
 
 function seedDemo(){
   const r = parseWords(DEMO_LINES.join("\n"));
   const dated = assignDates(r.items, new Date());
   state = emptyState();
-  state.words = dated.map(function(w, i){
+  state.words = dated.filter(function(x){ return !x.__sent; }).map(function(w, i){
     return {
-      id: "demo_" + i,
+      id: "demo_w" + i,
       en: w.en, zh: w.zh, ipa: w.ipa || "", unit: "5AU4",
       box: 1, sorted: false, state: "hard",
+      dictDate: w.dictDate, lastSeen: "", retired: false
+    };
+  });
+  state.sentences = dated.filter(function(x){ return x.__sent; }).map(function(w, i){
+    return {
+      id: "demo_s" + i,
+      en: w.en, zh: w.zh,
+      box: 1, state: "hard",
       dictDate: w.dictDate, lastSeen: "", retired: false
     };
   });
@@ -1262,6 +1429,12 @@ function seedDemo(){
 /* ---------- 截图 / 调试入口 ---------- */
 function runShot(shot){
   const now = new Date();
+  if (shot === "sent"){
+    const sents = (state.sentences || []);
+    if (!sents.length){ toast("没有句子"); return; }
+    startSession("evening", sents.slice(0, 2), "练一练 · 补句");
+    return;
+  }
   if (shot === "import"){ renderImport(); return; }
   if (shot === "panel"){ openPanel(); return; }
 
