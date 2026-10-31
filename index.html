@@ -999,6 +999,10 @@ function renderImport(){
       "</div>" +
       '<div class="pad" style="display:flex;flex-direction:column;flex:1;min-height:0">' +
         '<textarea id="imp-text" placeholder="每行一个词，例如：&#10;tiger 虎&#10;safari park 野生动物园&#10;1. whale 鲸&#10;&#10;想指定周几就在上面加一行：&#10;# 周一"></textarea>' +
+        '<input type="file" id="imp-file" accept=".txt,text/plain" style="display:none" />' +
+        '<div class="row" style="margin-top:12px">' +
+          '<button class="ghost" id="imp-pick" style="flex:1;padding:10px">从 txt 文件读</button>' +
+        '</div>' +
         '<button class="cta" id="imp-parse" style="margin:12px 0 0;padding:14px;font-size:15px">解析</button>' +
         '<div class="preview" id="imp-preview" style="display:none"></div>' +
         '<button class="cta" id="imp-save" style="display:none;margin:12px 0 0">入库</button>' +
@@ -1007,6 +1011,18 @@ function renderImport(){
 
   $("#imp-back").onclick = renderHome;
   let parsed = null;
+
+  $("#imp-pick").onclick = function(){ $("#imp-file").click(); };
+  $("#imp-file").onchange = function(e){
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = function(){
+      $("#imp-text").value = String(rd.result || "");
+      toast("已读入 " + f.name + "，点解析");
+    };
+    rd.readAsText(f, "utf-8");
+  };
 
   $("#imp-parse").onclick = function(){
     const text = $("#imp-text").value;
